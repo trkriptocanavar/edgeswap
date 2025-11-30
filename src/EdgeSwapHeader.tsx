@@ -103,3 +103,5 @@ const EdgeSwapHeader: React.FC = () => {
     </div>
   );
 };
+
+export default EdgeSwapHeader;

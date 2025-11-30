@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect, useRef } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 
 /* ========= ICONS & ASSETS ========= */
 
@@ -128,8 +128,6 @@ const ERC20_ABI = ["function balanceOf(address owner) view returns (uint256)", "
 const FAUCET_ABI = ["function claim(address token) external"];
 
 const formatBalance = (v?: string) => { if (!v) return "0.00"; const num = Number(v); if (!isFinite(num)) return "0.00"; if (num === 0) return "0.00"; if (num < 0.0001) return "<0.0001"; return (Math.floor(num * 10000) / 10000).toFixed(4); };
-const formatCurrency = (val: number) => { return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(val); };
-const shortenHash = (hash: string) => `${hash.slice(0, 6)}...${hash.slice(-4)}`;
 const SEPOLIA_CHAIN_ID = 11155111;
 const SEPOLIA_HEX_ID = "0xaa36a7";
 
@@ -197,9 +195,8 @@ function App() {
   });
   const [toasts, setToasts] = useState<{ id: number; msg: string; type: "success" | "error" | "info" }[]>([]);
 
-  const [isAddingLiquidity, setIsAddingLiquidity] = useState(false);
-  const [userPositions, setUserPositions] = useState<any[]>([]);
-
+  
+  const [userPositions] = useState<any[]>([]);
   const [account, setAccount] = useState<string | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
   const [chainId, setChainId] = useState<number | null>(null);
@@ -207,13 +204,12 @@ function App() {
   const [ethBalance, setEthBalance] = useState<string>(() => localStorage.getItem("ethBalance") || "0");
   const [usdcBalance, setUsdcBalance] = useState<string>(() => localStorage.getItem("usdcBalance") || "0");
   const [daiBalance, setDaiBalance] = useState<string>(() => localStorage.getItem("daiBalance") || "0");
-  const [isLoadingBalances, setIsLoadingBalances] = useState(false);
+  const [, setIsLoadingBalances] = useState(false);
 
   const [isSwapping, setIsSwapping] = useState(false);
   const [isClaimingUsdc, setIsClaimingUsdc] = useState(false);
   const [isClaimingDai, setIsClaimingDai] = useState(false);
-  const [lastTxHash, setLastTxHash] = useState<string | null>(null);
-
+  const [, setLastTxHash] = useState<string | null>(null);
   const [ethersLoaded, setEthersLoaded] = useState(false);
 
   useEffect(() => {
@@ -449,52 +445,7 @@ function App() {
     }
   };
 
-  const handleAddLiquidity = async () => {
-    if (!account || !fromAmount) return;
-    if (chainId !== SEPOLIA_CHAIN_ID) return switchNetwork();
-    setIsSwapping(true);
-    try {
-      const provider = getProvider();
-      const signer = await provider.getSigner();
-      const tokenAddress = TOKEN_ADDRESSES[fromToken.symbol];
-      if (!tokenAddress) throw new Error("Unsupported token for liquidity");
-      // @ts-ignore
-      const tokenContract = new (window as any).ethers.Contract(tokenAddress, ERC20_ABI, signer);
-      const decimals = fromToken.decimals;
-      // @ts-ignore
-      const amountIn = (window as any).ethers.parseUnits(fromAmount, decimals);
-      const realBalance = await tokenContract.balanceOf(account);
-      // @ts-ignore
-      if (realBalance < amountIn) {
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-        const amountFloat = parseFloat(fromAmount);
-        if (fromToken.symbol === "USDC") setUsdcBalance((prev) => Math.max(0, parseFloat(prev) - amountFloat).toFixed(4));
-        if (fromToken.symbol === "DAI") setDaiBalance((prev) => Math.max(0, parseFloat(prev) - amountFloat).toFixed(4));
-        const newPosition = { pair: [fromToken.symbol, toToken.symbol], amountA: fromAmount, amountB: toAmount, apr: "12.4%" };
-        setUserPositions([...userPositions, newPosition]);
-        addTransaction({ type: "Liquidity", desc: `Add ${fromToken.symbol}/${toToken.symbol}`, amount: fromAmount, token: "LP", hash: "0xSIM_" + Math.random().toString(36).substr(2, 6) });
-        setIsAddingLiquidity(false);
-        addToast(t.toast.liqSim, "success");
-        return;
-      }
-      const tx = await tokenContract.transfer(MOCK_POOL_ADDRESS, amountIn, { gasLimit: 200000 });
-      const amountFloat = parseFloat(fromAmount);
-      const newUsdc = Math.max(0, parseFloat(usdcBalance) - amountFloat).toFixed(4);
-      setUsdcBalance(newUsdc);
-      const newPosition = { pair: [fromToken.symbol, toToken.symbol], amountA: fromAmount, amountB: toAmount, apr: "12.4%" };
-      setUserPositions([...userPositions, newPosition]);
-      addTransaction({ type: "Liquidity", desc: `Add ${fromToken.symbol}/${toToken.symbol}`, amount: fromAmount, token: "LP", hash: tx.hash });
-      setIsAddingLiquidity(false);
-      addToast(t.toast.liqSuccess, "success");
-      tx.wait().then(() => fetchBalances());
-    } catch (err: any) {
-      console.error(err);
-      addToast("Transaction failed: " + (err.reason || "Unknown error"), "error");
-    } finally {
-      setIsSwapping(false);
-    }
-  };
-
+  
   const handleSwap = async () => {
     if (!account || !fromAmount) return;
     if (chainId !== SEPOLIA_CHAIN_ID) return switchNetwork();
