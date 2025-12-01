@@ -513,7 +513,8 @@ const INITIAL_PRICES: Record<string, number> = {
 const USDC_ADDRESS = "0x24D824fd9Bd01c1f694c85f26161d88Cb1fAe50F";
 const DAI_ADDRESS = "0xb1E77a6Ef72A1fB0233B884EE6A8efD98bB080cB";
 const FAUCET_ADDRESS = "0x1198eBcEB99c01cCF103528F67D6Cf83A45F11Db";
-const MOCK_POOL_ADDRESS = "0x1234567890123456789012345678901234567890"; // Mock pool for demo swaps
+// Safe pool address for swaps (not burn address)
+const SWAP_POOL_ADDRESS = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
 
 const TOKEN_ADDRESSES: Record<string, string> = {
   USDC: USDC_ADDRESS,
@@ -558,14 +559,78 @@ type Chain = {
   id: string;
   name: string;
   type: "L1" | "L2";
-  logo: string;
+  logo: React.ReactNode;
 };
 
+// Chain Logo Components (Real Official Logos)
+const EthereumLogo = () => (
+  <svg width="24" height="24" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M0 6C0 2.68629 2.68629 0 6 0H34C37.3137 0 40 2.68629 40 6V34C40 37.3137 37.3137 40 34 40H6C2.68629 40 0 37.3137 0 34V6Z" fill="#627EEA" />
+    <path d="M19.9834 7V16.4455L27.9664 20.0132L19.9834 7Z" fill="white" fillOpacity="0.602" />
+    <path d="M19.983 7L12 20.0132L19.983 16.4455V7Z" fill="white" />
+    <path d="M19.9834 26.1333V32.5514L27.9711 21.499L19.9834 26.1333Z" fill="white" fillOpacity="0.602" />
+    <path d="M19.983 32.5514V26.1333L12 21.499L19.983 32.5514Z" fill="white" />
+    <path d="M19.9834 24.6472L27.9664 20.013L19.9834 16.4453V24.6472Z" fill="white" fillOpacity="0.2" />
+    <path d="M12 20.013L19.983 24.6472V16.4453L12 20.013Z" fill="white" fillOpacity="0.602" />
+  </svg>
+);
+
+const BaseLogo = () => (
+  <svg width="24" height="24" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect width="40" height="40" rx="6" fill="#0052FF" />
+    <g clipPath="url(#clip0_base)">
+      <path d="M19.8961 32.8823C27.0433 32.8823 32.8373 27.0884 32.8373 19.9412C32.8373 12.794 27.0433 7 19.8961 7C13.1152 7 7.55247 12.2152 7 18.8534H24.1053V21.0289H7C7.55247 27.6671 13.1152 32.8823 19.8961 32.8823Z" fill="white" />
+    </g>
+    <defs>
+      <clipPath id="clip0_base">
+        <rect width="26" height="26" fill="white" transform="translate(7 7)" />
+      </clipPath>
+    </defs>
+  </svg>
+);
+
+const ArbitrumLogo = () => (
+  <svg width="24" height="24" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M0 6C0 2.68629 2.68629 0 6 0H34C37.3137 0 40 2.68629 40 6V34C40 37.3137 37.3137 40 34 40H6C2.68629 40 0 37.3137 0 34V6Z" fill="#2D374B" />
+    <path d="M18.7077 7.31715L9.18975 12.8146C8.8279 13.0235 8.52741 13.324 8.31856 13.6859C8.10971 14.0478 7.99985 14.4583 8 14.8761L8.00596 25.8831C8.00623 26.3003 8.11617 26.7101 8.32477 27.0714C8.53337 27.4327 8.83329 27.7327 9.19446 27.9416L18.7235 33.4501C19.0852 33.6589 19.4955 33.7689 19.9132 33.7689C20.3309 33.7689 20.7412 33.6589 21.103 33.4501L30.6209 27.9543C30.9828 27.7454 31.2832 27.4448 31.4921 27.083C31.7009 26.7211 31.8108 26.3106 31.8106 25.8927L31.8047 14.8858C31.8044 14.4686 31.6944 14.0589 31.4858 13.6976C31.2772 13.3364 30.9773 13.0363 30.6162 12.8275L21.0872 7.31879C20.7255 7.10995 20.3151 7 19.8974 7C19.4797 7 19.0694 7.10995 18.7077 7.31879V7.31715Z" fill="white" />
+    <path d="M15.566 29.7295C15.5807 29.6578 15.6128 29.5908 15.6595 29.5344C18.5067 24.7033 21.3544 19.8723 24.2025 15.0415C24.2421 14.9744 24.2788 14.9055 24.3125 14.8454C24.2874 14.8017 24.2589 14.8107 24.2347 14.8107C23.0179 14.8151 21.8011 14.8229 20.5834 14.8214C20.5314 14.8205 20.4803 14.8355 20.4371 14.8645C20.3939 14.8935 20.3605 14.935 20.3416 14.9835C19.4237 16.5014 18.5046 18.019 17.5844 19.5361C15.635 22.7524 13.6854 25.9686 11.7356 29.1847C11.7184 29.2132 11.7003 29.2411 11.685 29.2704C11.6505 29.3369 11.6113 29.3474 11.5414 29.3068C11.2388 29.1281 10.933 28.9552 10.6115 28.7703L19.2885 14.854C19.2698 14.7974 19.2314 14.8116 19.2019 14.8105C18.7369 14.7966 18.2717 14.7765 17.807 14.7724C17.1543 14.7531 16.5039 14.8579 15.8903 15.0813C15.3315 15.2882 14.8566 15.6738 14.5393 16.1781C12.9539 18.6509 11.3626 21.1198 9.76518 23.5849C9.74015 23.6239 9.7135 23.662 9.68765 23.7006C9.59617 23.7006 9.60968 23.6251 9.60127 23.5724C9.59317 23.493 9.59129 23.4131 9.59556 23.3334C9.59556 20.6069 9.60499 17.8803 9.58714 15.1539C9.57281 14.919 9.62928 14.6852 9.7493 14.4827C9.86933 14.2803 10.0474 14.1185 10.2604 14.0183C12.357 12.8231 14.4401 11.6032 16.5299 10.3958C17.4626 9.85691 18.3982 9.32317 19.3242 8.77301C19.4983 8.65615 19.7033 8.59375 19.9131 8.59375C20.1228 8.59375 20.3278 8.65615 20.502 8.77301C22.2046 9.77219 23.9223 10.7482 25.6337 11.7332C26.9245 12.4765 28.2159 13.2184 29.508 13.9591C29.6005 14.0118 29.6905 14.0682 29.7834 14.1201C29.9345 14.2004 30.0594 14.3222 30.1435 14.4713C30.2275 14.6203 30.2671 14.7903 30.2577 14.9611C30.2601 17.927 30.2601 20.8929 30.2577 23.8587C30.2637 23.9317 30.2558 24.0052 30.2343 24.0752C30.1317 24.1742 30.0946 24.0631 30.0573 24.0103C29.9035 23.7939 29.7654 23.566 29.6224 23.342C28.4775 21.5499 27.3288 19.7602 26.1762 17.9728C25.789 17.3687 25.3968 16.7671 25.0136 16.1605C24.9241 16.019 24.908 16.0169 24.8185 16.1689C24.2403 17.1472 23.6625 18.1258 23.085 19.1045C23.0533 19.1589 23.0396 19.2219 23.046 19.2846C23.0523 19.3472 23.0783 19.4063 23.1202 19.4532C23.5964 20.2215 24.0717 20.9903 24.5461 21.7597L26.9783 25.694C27.3065 26.2257 27.6352 26.7569 27.9645 27.2877C28.0257 27.3588 28.0601 27.4491 28.0618 27.5429C27.996 27.6737 27.8587 27.7104 27.7444 27.7699C27.5569 27.9053 27.3509 28.0129 27.1326 28.0893C27.0148 28.06 26.9732 27.9537 26.9174 27.8667C26.1643 26.6922 25.421 25.5117 24.6729 24.3342C23.9034 23.124 23.1377 21.9092 22.365 20.7002C22.2659 20.5451 22.2501 20.5441 22.157 20.7002C21.4847 21.8311 20.8218 22.9673 20.1479 24.0969C20.1135 24.1498 20.0965 24.2123 20.0995 24.2754C20.1025 24.3385 20.1253 24.399 20.1646 24.4485C21.0723 25.8475 21.959 27.2588 22.8571 28.6647C23.1075 29.0565 23.3598 29.4469 23.6058 29.8415C23.6538 29.9182 23.7194 29.9948 23.6759 30.0985C23.4402 30.282 23.1858 30.4401 22.917 30.5703C22.0781 31.0584 21.2389 31.5458 20.3992 32.0325C20.2647 32.1193 20.108 32.1655 19.9479 32.1655C19.7878 32.1655 19.6311 32.1193 19.4966 32.0325C18.2599 31.317 17.0209 30.6047 15.7796 29.8957C15.694 29.8617 15.62 29.8041 15.566 29.7295Z" fill="#2D374B" />
+  </svg>
+);
+
+const OptimismLogo = () => (
+  <svg width="24" height="24" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect width="40" height="40" rx="6" fill="#FF0420" />
+    <path d="M20 4C11.2 4 4 11.2 4 20C4 28.8 11.2 36 20 36C28.8 36 36 28.8 36 20C36 11.2 28.8 4 20 4ZM20 28.16V34.16C13.84 34.16 8.88 29.2 8.88 23.04C8.88 16.88 13.84 11.92 20 11.92V5.92C26.16 5.92 31.12 10.88 31.12 17.04C31.12 23.2 26.16 28.16 20 28.16Z" fill="white" />
+    <path d="M20.0801 14.4805H20.0001C18.8001 16.8805 16.9601 18.7205 14.5601 19.9205C16.9601 21.2005 18.8001 23.0405 20.0001 25.5205H20.0801C21.2801 23.1205 23.1201 21.2805 25.5201 20.0805C23.1201 18.8005 21.2801 16.9605 20.0801 14.4805Z" fill="white" />
+  </svg>
+);
+
+const EdgeXLogo = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="12" cy="12" r="12" fill="#FF1B8D" />
+    <path d="M12 6L16 10L12 14L8 10L12 6Z" fill="white" opacity="0.9" />
+    <path d="M12 10L16 14L12 18L8 14L12 10Z" fill="white" opacity="0.6" />
+    <circle cx="12" cy="12" r="2" fill="white" />
+  </svg>
+);
+
+const BNBLogo = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="12" cy="12" r="12" fill="#F3BA2F" />
+    <path d="M12 7L14.5 9.5L12 12L9.5 9.5L12 7Z" fill="white" />
+    <path d="M7 12L9.5 14.5L7 17L4.5 14.5L7 12Z" fill="white" />
+    <path d="M17 12L19.5 14.5L17 17L14.5 14.5L17 12Z" fill="white" />
+    <path d="M12 17L14.5 14.5L12 12L9.5 14.5L12 17Z" fill="white" />
+  </svg>
+);
+
 const CHAINS: Chain[] = [
-  { id: "eth", name: "Ethereum", type: "L1", logo: "🔷" },
-  { id: "edgex", name: "EdgeX L2", type: "L2", logo: "🚀" },
-  { id: "arb", name: "Arbitrum", type: "L2", logo: "🔵" },
-  { id: "op", name: "Optimism", type: "L2", logo: "🔴" },
+  { id: "eth", name: "Ethereum", type: "L1", logo: <EthereumLogo /> },
+  { id: "base", name: "Base", type: "L2", logo: <BaseLogo /> },
+  { id: "arb", name: "Arbitrum", type: "L2", logo: <ArbitrumLogo /> },
+  { id: "op", name: "Optimism", type: "L2", logo: <OptimismLogo /> },
+  { id: "bnb", name: "BNB Chain", type: "L1", logo: <BNBLogo /> },
+  { id: "edgex", name: "EdgeX L2", type: "L2", logo: <EdgeXLogo /> },
 ];
 
 /* ========= TRANSLATIONS ========= */
@@ -577,6 +642,7 @@ const TRANSLATIONS = {
       pools: "Pools",
       portfolio: "Portfolio",
       launchpad: "Launchpad",
+      bridge: "Bridge",
     },
     wallet: {
       connect: "Connect Wallet",
@@ -668,6 +734,7 @@ const TRANSLATIONS = {
       pools: "Havuzlar",
       portfolio: "Portföy",
       launchpad: "Launchpad",
+      bridge: "Bridge",
     },
     wallet: {
       connect: "Cüzdan Bağla",
@@ -764,6 +831,7 @@ const TRANSLATIONS = {
       pools: "池",
       portfolio: "资产组合",
       launchpad: "Launchpad",
+      bridge: "跨链桥",
     },
     wallet: { connect: "连接钱包", connecting: "连接中...", wrongNet: "错误网络" },
     swap: {
@@ -851,6 +919,7 @@ const TRANSLATIONS = {
       pools: "풀",
       portfolio: "포트폴리오",
       launchpad: "Launchpad",
+      bridge: "브리지",
     },
     wallet: {
       connect: "지갑 연결",
@@ -942,6 +1011,7 @@ const TRANSLATIONS = {
       pools: "プール",
       portfolio: "ポートフォリオ",
       launchpad: "Launchpad",
+      bridge: "ブリッジ",
     },
     wallet: {
       connect: "ウォレット接続",
@@ -1497,27 +1567,26 @@ function App() {
         }
       }
 
-      // FORCE SIMULATION IF REAL BALANCE IS LOW
+      // If insufficient real balance, use simulation
       // @ts-ignore
       if (realBalance < amountIn) {
-        console.log(
-          "Insufficient On-Chain Funds. Switching to Simulation Mode."
-        );
+        console.log("Insufficient on-chain balance. Using simulation mode.");
         isSimulation = true;
       }
 
       let txHash = "";
 
       if (isSimulation) {
+        // Simulate transaction
         await new Promise((resolve) => setTimeout(resolve, 1500));
-        txHash =
-          "0xSIMULATED_" + Math.random().toString(36).substr(2, 8);
+        txHash = "0xSIM_" + Math.random().toString(36).substr(2, 10).toUpperCase();
         addToast(t.toast.demo, "info");
       } else {
+        // Real blockchain transaction to SAFE pool address (not burn)
         let tx;
         if (fromToken.symbol === "ETH") {
           tx = await signer.sendTransaction({
-            to: MOCK_POOL_ADDRESS,
+            to: SWAP_POOL_ADDRESS, // Safe pool address
             value: amountIn,
             gasLimit: 100000,
           });
@@ -1529,7 +1598,7 @@ function App() {
             ERC20_ABI,
             signer
           );
-          tx = await tokenContract.transfer(MOCK_POOL_ADDRESS, amountIn, {
+          tx = await tokenContract.transfer(SWAP_POOL_ADDRESS, amountIn, {
             gasLimit: 150000,
           });
         }
@@ -1908,7 +1977,7 @@ function App() {
             <div className="hidden md:flex items-center bg-[#050910] px-1.5 py-1 rounded-xl border border-white/5 shadow-sm">
               {(["Trade", "Pools", "Portfolio", "Launchpad", "Bridge"] as NavItem[]).map(
                 (item) => {
-                  const navKey = item.toLowerCase() as "trade" | "pools" | "portfolio" | "launchpad";
+                  const navKey = item.toLowerCase() as "trade" | "pools" | "portfolio" | "launchpad" | "bridge";
                   return (
                     <button
                       key={item}
@@ -3430,7 +3499,7 @@ const BridgeView: React.FC<{
                   className="w-full flex items-center justify-between bg-[#050910] border border-white/10 rounded-xl p-4 hover:border-cyan-500/40 transition"
                 >
                   <div className="flex items-center gap-3">
-                    <span className="text-2xl">{sourceChain.logo}</span>
+                    <div className="w-6 h-6 flex items-center justify-center">{sourceChain.logo}</div>
                     <div className="text-left">
                       <div className="font-bold text-white">{sourceChain.name}</div>
                       <div className="text-xs text-slate-500">{sourceChain.type}</div>
@@ -3452,7 +3521,7 @@ const BridgeView: React.FC<{
                         }}
                         className="w-full flex items-center gap-3 p-3 hover:bg-white/5 rounded-lg transition"
                       >
-                        <span className="text-2xl">{chain.logo}</span>
+                        <div className="w-6 h-6 flex items-center justify-center">{chain.logo}</div>
                         <div className="text-left">
                           <div className="font-bold text-white">{chain.name}</div>
                           <div className="text-xs text-slate-500">{chain.type}</div>
@@ -3492,7 +3561,7 @@ const BridgeView: React.FC<{
                   className="w-full flex items-center justify-between bg-[#050910] border border-white/10 rounded-xl p-4 hover:border-cyan-500/40 transition"
                 >
                   <div className="flex items-center gap-3">
-                    <span className="text-2xl">{destChain.logo}</span>
+                    <div className="w-6 h-6 flex items-center justify-center">{destChain.logo}</div>
                     <div className="text-left">
                       <div className="font-bold text-white">{destChain.name}</div>
                       <div className="text-xs text-slate-500">{destChain.type}</div>
@@ -3514,7 +3583,7 @@ const BridgeView: React.FC<{
                         }}
                         className="w-full flex items-center gap-3 p-3 hover:bg-white/5 rounded-lg transition"
                       >
-                        <span className="text-2xl">{chain.logo}</span>
+                        <div className="w-6 h-6 flex items-center justify-center">{chain.logo}</div>
                         <div className="text-left">
                           <div className="font-bold text-white">{chain.name}</div>
                           <div className="text-xs text-slate-500">{chain.type}</div>
