@@ -489,10 +489,10 @@ const LAUNCHPAD_PROJECTS = [
 ];
 
 type ActiveTab = "swap" | "limit" | "liquidity";
-type NavItem = "Trade" | "Pools" | "Portfolio" | "Launchpad";
+type NavItem = "Trade" | "Pools" | "Portfolio" | "Launchpad" | "Bridge";
 type Transaction = {
   id: string;
-  type: "Swap" | "Liquidity" | "Faucet";
+  type: "Swap" | "Liquidity" | "Faucet" | "Bridge";
   desc: string;
   amount: string;
   token: string;
@@ -513,7 +513,7 @@ const INITIAL_PRICES: Record<string, number> = {
 const USDC_ADDRESS = "0x24D824fd9Bd01c1f694c85f26161d88Cb1fAe50F";
 const DAI_ADDRESS = "0xb1E77a6Ef72A1fB0233B884EE6A8efD98bB080cB";
 const FAUCET_ADDRESS = "0x1198eBcEB99c01cCF103528F67D6Cf83A45F11Db";
-const MOCK_POOL_ADDRESS = "0x000000000000000000000000000000000000dEaD";
+const MOCK_POOL_ADDRESS = "0x1234567890123456789012345678901234567890"; // Mock pool for demo swaps
 
 const TOKEN_ADDRESSES: Record<string, string> = {
   USDC: USDC_ADDRESS,
@@ -553,6 +553,20 @@ const shortenHash = (hash: string) =>
 
 const SEPOLIA_CHAIN_ID = 11155111;
 const SEPOLIA_HEX_ID = "0xaa36a7";
+
+type Chain = {
+  id: string;
+  name: string;
+  type: "L1" | "L2";
+  logo: string;
+};
+
+const CHAINS: Chain[] = [
+  { id: "eth", name: "Ethereum", type: "L1", logo: "🔷" },
+  { id: "edgex", name: "EdgeX L2", type: "L2", logo: "🚀" },
+  { id: "arb", name: "Arbitrum", type: "L2", logo: "🔵" },
+  { id: "op", name: "Optimism", type: "L2", logo: "🔴" },
+];
 
 /* ========= TRANSLATIONS ========= */
 
@@ -597,6 +611,31 @@ const TRANSLATIONS = {
       faucetDesc: "Use the faucet to mint free USDC & DAI.",
       mint: "Mint",
     },
+    launchpad: {
+      title: "Premium L2 Token Launches",
+      subtitle: "Whitelisted, AI-risk scored projects with guaranteed liquidity. Join early-stage projects on EdgeX, analyze risk/reward profiles with MARU AI.",
+      totalRaise: "Total Raise",
+      activeUpcoming: "Active / Upcoming",
+      active: "active",
+      upcoming: "upcoming",
+      trustLayer: "Trust Layer",
+      tiers: "EdgeX Tiers",
+      comingSoon: "Coming Soon",
+      activeSales: "Active Sales",
+      noActiveSales: "No active sales at the moment.",
+      upcomingProjects: "Upcoming Projects",
+      completedSales: "Completed Sales",
+      price: "Price",
+      payment: "Payment",
+      raise: "Raise",
+      progress: "Progress",
+      start: "Start",
+      end: "End",
+      target: "target",
+      raised: "Raised",
+      saleType: "Sale Type",
+      joinDemo: "Join (demo)",
+    },
     toast: {
       install: "Please install MetaMask wallet.",
       connected: "Wallet connected successfully!",
@@ -609,6 +648,18 @@ const TRANSLATIONS = {
       demo: "Demo Mode: Executing virtual swap...",
       rejected: "Transaction rejected by user.",
       failed: "Transaction failed.",
+    },
+    bridge: {
+      title: "Cross-Chain Bridge",
+      subtitle: "Transfer assets securely between L1 and L2 networks.",
+      source: "From Network",
+      dest: "To Network",
+      transfer: "Transfer",
+      approving: "Approving...",
+      bridging: "Bridging...",
+      completed: "Transfer Completed!",
+      estTime: "Est. Time",
+      fees: "Bridge Fee",
     },
   },
   tr: {
@@ -656,6 +707,31 @@ const TRANSLATIONS = {
       faucetDesc: "Sepolia ağında ücretsiz USDC & DAI bas.",
       mint: "Bas",
     },
+    launchpad: {
+      title: "Premium L2 Token Lansmanları",
+      subtitle: "Whitelisted, AI-risk skorlu ve likiditesi garanti altına alınmış projeler. EdgeX üzerinden erken aşama projelere katıl, MARU AI ile risk / ödül profilini analiz et.",
+      totalRaise: "Toplam Raise",
+      activeUpcoming: "Aktif / Gelecek",
+      active: "aktif",
+      upcoming: "yakında",
+      trustLayer: "Güven Katmanı",
+      tiers: "EdgeX Tiers",
+      comingSoon: "Yakında",
+      activeSales: "Aktif Satışlar",
+      noActiveSales: "Şu anda aktif satış yok.",
+      upcomingProjects: "Yaklaşan Projeler",
+      completedSales: "Tamamlanan Satışlar",
+      price: "Fiyat",
+      payment: "Ödeme",
+      raise: "Raise",
+      progress: "İlerleme",
+      start: "Başlangıç",
+      end: "Bitiş",
+      target: "hedef",
+      raised: "Toplanan",
+      saleType: "Satış Tipi",
+      joinDemo: "Katıl (demo)",
+    },
     toast: {
       install: "Lütfen MetaMask cüzdanı yükleyin.",
       connected: "Cüzdan başarıyla bağlandı!",
@@ -668,6 +744,18 @@ const TRANSLATIONS = {
       demo: "Demo Modu: Sanal işlem yapılıyor...",
       rejected: "İşlem kullanıcı tarafından reddedildi.",
       failed: "İşlem başarısız oldu.",
+    },
+    bridge: {
+      title: "Cross-Chain Bridge",
+      subtitle: "Transfer assets securely between L1 and L2 networks.",
+      source: "From Network",
+      dest: "To Network",
+      transfer: "Transfer",
+      approving: "Approving...",
+      bridging: "Bridging...",
+      completed: "Transfer Completed!",
+      estTime: "Est. Time",
+      fees: "Bridge Fee",
     },
   },
   zh: {
@@ -706,6 +794,31 @@ const TRANSLATIONS = {
       faucetDesc: "使用水龙头铸造免费 USDC & DAI。",
       mint: "铸造",
     },
+    launchpad: {
+      title: "高级 L2 代币发布",
+      subtitle: "白名单、AI 风险评分和保证流动性的项目。在 EdgeX 上加入早期项目，使用 MARU AI 分析风险/回报。",
+      totalRaise: "总募集",
+      activeUpcoming: "活跃 / 即将推出",
+      active: "活跃",
+      upcoming: "即将推出",
+      trustLayer: "信任层",
+      tiers: "EdgeX 等级",
+      comingSoon: "即将推出",
+      activeSales: "活跃销售",
+      noActiveSales: "目前没有活跃销售。",
+      upcomingProjects: "即将推出的项目",
+      completedSales: "已完成销售",
+      price: "价格",
+      payment: "支付",
+      raise: "募集",
+      progress: "进度",
+      start: "开始",
+      end: "结束",
+      target: "目标",
+      raised: "已募集",
+      saleType: "销售类型",
+      joinDemo: "加入（演示）",
+    },
     toast: {
       install: "请安装 MetaMask。",
       connected: "钱包连接成功!",
@@ -718,6 +831,18 @@ const TRANSLATIONS = {
       demo: "演示模式: 执行虚拟交换...",
       rejected: "用户拒绝交易。",
       failed: "交易失败。",
+    },
+    bridge: {
+      title: "跨链桥",
+      subtitle: "在 L1 和 L2 网络之间安全转移资产。",
+      source: "源网络",
+      dest: "目标网络",
+      transfer: "转移",
+      approving: "批准中...",
+      bridging: "桥接中...",
+      completed: "转移完成！",
+      estTime: "预计时间",
+      fees: "桥接费用",
     },
   },
   ko: {
@@ -760,6 +885,31 @@ const TRANSLATIONS = {
       faucetDesc: "수도꼭지를 사용하여 무료 USDC & DAI를 발행하세요.",
       mint: "발행",
     },
+    launchpad: {
+      title: "프리미엄 L2 토큰 런치",
+      subtitle: "화이트리스트, AI 위험 점수 및 보장된 유동성을 갖춘 프로젝트. EdgeX에서 초기 단계 프로젝트에 참여하고 MARU AI로 위험/보상 프로필을 분석하세요.",
+      totalRaise: "총 모금액",
+      activeUpcoming: "활성 / 예정",
+      active: "활성",
+      upcoming: "예정",
+      trustLayer: "신뢰 계층",
+      tiers: "EdgeX 티어",
+      comingSoon: "곧 출시",
+      activeSales: "활성 판매",
+      noActiveSales: "현재 활성 판매가 없습니다.",
+      upcomingProjects: "예정된 프로젝트",
+      completedSales: "완료된 판매",
+      price: "가격",
+      payment: "결제",
+      raise: "모금",
+      progress: "진행률",
+      start: "시작",
+      end: "종료",
+      target: "목표",
+      raised: "모금됨",
+      saleType: "판매 유형",
+      joinDemo: "참여 (데모)",
+    },
     toast: {
       install: "MetaMask를 설치해주세요.",
       connected: "지갑 연결 성공!",
@@ -772,6 +922,18 @@ const TRANSLATIONS = {
       demo: "데모 모드: 가상 스왑 실행 중...",
       rejected: "사용자가 거래 거부.",
       failed: "거래 실패.",
+    },
+    bridge: {
+      title: "크로스 체인 브리지",
+      subtitle: "L1과 L2 네트워크 간에 자산을 안전하게 전송합니다.",
+      source: "보내는 네트워크",
+      dest: "받는 네트워크",
+      transfer: "전송",
+      approving: "승인 중...",
+      bridging: "브리징 중...",
+      completed: "전송 완료!",
+      estTime: "예상 시간",
+      fees: "브리지 수수료",
     },
   },
   ja: {
@@ -814,6 +976,31 @@ const TRANSLATIONS = {
       faucetDesc: "フォーセットを使用して無料のUSDCとDAIをミント。",
       mint: "ミント",
     },
+    launchpad: {
+      title: "プレミアム L2 トークンローンチ",
+      subtitle: "ホワイトリスト、AI リスクスコア、保証された流動性を持つプロジェクト。EdgeX で初期段階のプロジェクトに参加し、MARU AI でリスク/リワードプロファイルを分析します。",
+      totalRaise: "総調達額",
+      activeUpcoming: "アクティブ / 予定",
+      active: "アクティブ",
+      upcoming: "予定",
+      trustLayer: "信頼層",
+      tiers: "EdgeX ティア",
+      comingSoon: "近日公開",
+      activeSales: "アクティブセール",
+      noActiveSales: "現在アクティブなセールはありません。",
+      upcomingProjects: "予定プロジェクト",
+      completedSales: "完了したセール",
+      price: "価格",
+      payment: "支払い",
+      raise: "調達",
+      progress: "進捗",
+      start: "開始",
+      end: "終了",
+      target: "目標",
+      raised: "調達済み",
+      saleType: "セールタイプ",
+      joinDemo: "参加（デモ）",
+    },
     toast: {
       install: "MetaMaskをインストールしてください。",
       connected: "ウォレット接続成功!",
@@ -826,6 +1013,18 @@ const TRANSLATIONS = {
       demo: "デモモード: 仮想スワップ実行中...",
       rejected: "ユーザーが取引を拒否しました。",
       failed: "取引失敗。",
+    },
+    bridge: {
+      title: "クロスチェーンブリッジ",
+      subtitle: "L1とL2ネットワーク間で資産を安全に転送します。",
+      source: "送信元ネットワーク",
+      dest: "送信先ネットワーク",
+      transfer: "転送",
+      approving: "承認中...",
+      bridging: "ブリッジ中...",
+      completed: "転送完了！",
+      estTime: "予想時間",
+      fees: "ブリッジ手数料",
     },
   },
 } as const;
@@ -922,6 +1121,13 @@ function App() {
   const [isClaimingUsdc, setIsClaimingUsdc] = useState(false);
   const [isClaimingDai, setIsClaimingDai] = useState(false);
   const [_lastTxHash, setLastTxHash] = useState<string | null>(null);
+
+  // Bridge State
+  const [sourceChain, setSourceChain] = useState<Chain>(CHAINS[0]);
+  const [destChain, setDestChain] = useState<Chain>(CHAINS[1]);
+  const [bridgeAmount, setBridgeAmount] = useState("");
+  const [bridgeStatus, setBridgeStatus] = useState<"idle" | "approving" | "bridging" | "completed">("idle");
+  const [bridgeStep, setBridgeStep] = useState(0);
 
   // Ethers injection
   const [ethersLoaded, setEthersLoaded] = useState(false);
@@ -1390,6 +1596,41 @@ function App() {
     }
   };
 
+  const handleBridge = async () => {
+    if (!bridgeAmount) return;
+    setBridgeStatus("approving");
+    setBridgeStep(10);
+
+    // Simulate Approval
+    setTimeout(() => {
+      setBridgeStep(30);
+      setBridgeStatus("bridging");
+
+      // Simulate Bridging Progress
+      let progress = 30;
+      const interval = setInterval(() => {
+        progress += 10;
+        setBridgeStep(progress);
+        if (progress >= 100) {
+          clearInterval(interval);
+          setBridgeStatus("completed");
+          addToast(t.bridge.completed, "success");
+          addTransaction({
+            type: "Bridge",
+            desc: `Bridge ${bridgeAmount} ${fromToken.symbol} from ${sourceChain.name} to ${destChain.name}`,
+            amount: bridgeAmount,
+            token: fromToken.symbol,
+          });
+          setTimeout(() => {
+            setBridgeStatus("idle");
+            setBridgeStep(0);
+            setBridgeAmount("");
+          }, 3000);
+        }
+      }, 800);
+    }, 1500);
+  };
+
   const handleSwitchTokens = () => {
     const oldFrom = fromToken;
     setFromToken(toToken);
@@ -1665,7 +1906,7 @@ function App() {
           {/* ORTA: NAV */}
           <div className="flex-1 flex justify-center">
             <div className="hidden md:flex items-center bg-[#050910] px-1.5 py-1 rounded-xl border border-white/5 shadow-sm">
-              {(["Trade", "Pools", "Portfolio", "Launchpad"] as NavItem[]).map(
+              {(["Trade", "Pools", "Portfolio", "Launchpad", "Bridge"] as NavItem[]).map(
                 (item) => {
                   const navKey = item.toLowerCase() as "trade" | "pools" | "portfolio" | "launchpad";
                   return (
@@ -2228,7 +2469,110 @@ function App() {
           />
         )}
 
-        {activeNav === "Launchpad" && <LaunchpadView />}
+        {activeNav === "Launchpad" && <LaunchpadView t={t} />}
+
+        {/* ============ BRIDGE VIEW ============ */}
+        {activeNav === "Bridge" && (
+          <div className="w-full max-w-lg mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="bg-[#050910]/90 backdrop-blur-xl rounded-2xl border border-white/10 p-6 shadow-2xl relative overflow-hidden">
+              <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-cyan-500 via-purple-500 to-emerald-500 opacity-70" />
+
+              <h2 className="text-xl font-bold text-white mb-1">{t.bridge.title}</h2>
+              <p className="text-slate-400 text-xs mb-6">{t.bridge.subtitle}</p>
+
+              {/* Chain Selector */}
+              <div className="flex items-center gap-4 mb-6">
+                <div className="flex-1 space-y-2">
+                  <label className="text-[10px] uppercase tracking-wider text-slate-500 font-bold">{t.bridge.source}</label>
+                  <button
+                    onClick={() => {
+                      const nextIndex = (CHAINS.findIndex(c => c.id === sourceChain.id) + 1) % CHAINS.length;
+                      setSourceChain(CHAINS[nextIndex]);
+                    }}
+                    className="w-full flex items-center gap-2 bg-[#0b0f16] border border-white/10 p-3 rounded-xl hover:border-cyan-500/30 transition"
+                  >
+                    <span className="text-xl">{sourceChain.logo}</span>
+                    <span className="font-bold text-sm text-white">{sourceChain.name}</span>
+                  </button>
+                </div>
+                <div className="pt-6 text-slate-500">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="M12 5l7 7-7 7" /></svg>
+                </div>
+                <div className="flex-1 space-y-2">
+                  <label className="text-[10px] uppercase tracking-wider text-slate-500 font-bold">{t.bridge.dest}</label>
+                  <button
+                    onClick={() => {
+                      const nextIndex = (CHAINS.findIndex(c => c.id === destChain.id) + 1) % CHAINS.length;
+                      setDestChain(CHAINS[nextIndex]);
+                    }}
+                    className="w-full flex items-center gap-2 bg-[#0b0f16] border border-white/10 p-3 rounded-xl hover:border-purple-500/30 transition"
+                  >
+                    <span className="text-xl">{destChain.logo}</span>
+                    <span className="font-bold text-sm text-white">{destChain.name}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Amount Input */}
+              <div className="space-y-2 mb-6">
+                <label className="text-[10px] uppercase tracking-wider text-slate-500 font-bold">Amount</label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    value={bridgeAmount}
+                    onChange={(e) => setBridgeAmount(e.target.value)}
+                    placeholder="0.00"
+                    className="w-full bg-[#0b0f16] border border-white/10 rounded-xl p-4 text-white font-mono text-lg focus:outline-none focus:border-cyan-500/50 transition"
+                  />
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                    <span className="font-bold text-slate-300">{fromToken.symbol}</span>
+                    <div className="w-6 h-6 rounded-full bg-slate-800 flex items-center justify-center">{fromToken.icon}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Info */}
+              <div className="bg-white/5 rounded-xl p-4 space-y-2 text-xs text-slate-400 mb-6">
+                <div className="flex justify-between">
+                  <span>{t.bridge.estTime}</span>
+                  <span className="text-white font-mono">~5 mins</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>{t.bridge.fees}</span>
+                  <span className="text-white font-mono">$2.50</span>
+                </div>
+              </div>
+
+              {/* Action */}
+              <button
+                onClick={handleBridge}
+                disabled={!bridgeAmount || bridgeStatus !== "idle"}
+                className="w-full py-4 rounded-xl bg-gradient-to-r from-cyan-600 to-purple-600 text-white font-bold text-lg shadow-lg hover:shadow-cyan-500/20 disabled:opacity-50 transition relative overflow-hidden"
+              >
+                {bridgeStatus === "idle" ? t.bridge.transfer : (
+                  <span className="flex items-center justify-center gap-2">
+                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" /></svg>
+                    {bridgeStatus === "approving" ? t.bridge.approving : t.bridge.bridging}
+                  </span>
+                )}
+              </button>
+
+              {/* Progress Bar */}
+              {bridgeStatus !== "idle" && (
+                <div className="mt-6 space-y-2">
+                  <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-cyan-400 to-purple-500 transition-all duration-300" style={{ width: `${bridgeStep}%` }} />
+                  </div>
+                  <div className="flex justify-between text-[10px] text-slate-500 uppercase font-bold">
+                    <span className={bridgeStep >= 10 ? "text-cyan-400" : ""}>Approve</span>
+                    <span className={bridgeStep >= 30 ? "text-cyan-400" : ""}>Deposit</span>
+                    <span className={bridgeStep >= 100 ? "text-emerald-400" : ""}>Complete</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </main>
 
       {(isFromOpen || isToOpen) && (
@@ -2762,7 +3106,9 @@ const PortfolioView: React.FC<{
   };
 
 // LAUNCHPAD
-const LaunchpadView: React.FC = () => {
+const LaunchpadView: React.FC<{
+  t: typeof TRANSLATIONS[keyof typeof TRANSLATIONS];
+}> = ({ t }) => {
   const ongoing = LAUNCHPAD_PROJECTS.filter((p) => p.status === "ongoing");
   const upcoming = LAUNCHPAD_PROJECTS.filter((p) => p.status === "upcoming");
   const ended = LAUNCHPAD_PROJECTS.filter((p) => p.status === "ended");
@@ -2792,18 +3138,16 @@ const LaunchpadView: React.FC = () => {
               EdgeX Launchpad
             </div>
             <h1 className="text-3xl md:text-4xl font-black tracking-tight text-white mb-2">
-              Premium L2 Token Launches
+              {t.launchpad.title}
             </h1>
             <p className="text-sm md:text-[13px] text-slate-300 max-w-xl">
-              Whitelisted, AI-risk scored ve likiditesi garanti altına alınmış
-              projeler. EdgeX üzerinden erken aşama projelere katıl, MARU AI ile
-              risk / ödül profilini analiz et.
+              {t.launchpad.subtitle}
             </p>
 
             <div className="mt-5 grid grid-cols-2 md:grid-cols-3 gap-3 text-[11px] text-slate-300">
               <div className="flex flex-col gap-1">
                 <span className="uppercase tracking-[0.18em] text-slate-500 font-semibold">
-                  Toplam Raise
+                  {t.launchpad.totalRaise}
                 </span>
                 <span className="text-lg font-bold text-white">
                   {formatUsd(
@@ -2816,10 +3160,10 @@ const LaunchpadView: React.FC = () => {
               </div>
               <div className="flex flex-col gap-1">
                 <span className="uppercase tracking-[0.18em] text-slate-500 font-semibold">
-                  Aktif / Gelecek
+                  {t.launchpad.activeUpcoming}
                 </span>
                 <span className="text-lg font-bold text-cyan-300">
-                  {ongoing.length} aktif • {upcoming.length} yakında
+                  {ongoing.length} {t.launchpad.active} • {upcoming.length} {t.launchpad.upcoming}
                 </span>
               </div>
               <div className="flex flex-col gap-1">
