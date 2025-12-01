@@ -2473,105 +2473,21 @@ function App() {
 
         {/* ============ BRIDGE VIEW ============ */}
         {activeNav === "Bridge" && (
-          <div className="w-full max-w-lg mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="bg-[#050910]/90 backdrop-blur-xl rounded-2xl border border-white/10 p-6 shadow-2xl relative overflow-hidden">
-              <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-cyan-500 via-purple-500 to-emerald-500 opacity-70" />
-
-              <h2 className="text-xl font-bold text-white mb-1">{t.bridge.title}</h2>
-              <p className="text-slate-400 text-xs mb-6">{t.bridge.subtitle}</p>
-
-              {/* Chain Selector */}
-              <div className="flex items-center gap-4 mb-6">
-                <div className="flex-1 space-y-2">
-                  <label className="text-[10px] uppercase tracking-wider text-slate-500 font-bold">{t.bridge.source}</label>
-                  <button
-                    onClick={() => {
-                      const nextIndex = (CHAINS.findIndex(c => c.id === sourceChain.id) + 1) % CHAINS.length;
-                      setSourceChain(CHAINS[nextIndex]);
-                    }}
-                    className="w-full flex items-center gap-2 bg-[#0b0f16] border border-white/10 p-3 rounded-xl hover:border-cyan-500/30 transition"
-                  >
-                    <span className="text-xl">{sourceChain.logo}</span>
-                    <span className="font-bold text-sm text-white">{sourceChain.name}</span>
-                  </button>
-                </div>
-                <div className="pt-6 text-slate-500">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="M12 5l7 7-7 7" /></svg>
-                </div>
-                <div className="flex-1 space-y-2">
-                  <label className="text-[10px] uppercase tracking-wider text-slate-500 font-bold">{t.bridge.dest}</label>
-                  <button
-                    onClick={() => {
-                      const nextIndex = (CHAINS.findIndex(c => c.id === destChain.id) + 1) % CHAINS.length;
-                      setDestChain(CHAINS[nextIndex]);
-                    }}
-                    className="w-full flex items-center gap-2 bg-[#0b0f16] border border-white/10 p-3 rounded-xl hover:border-purple-500/30 transition"
-                  >
-                    <span className="text-xl">{destChain.logo}</span>
-                    <span className="font-bold text-sm text-white">{destChain.name}</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Amount Input */}
-              <div className="space-y-2 mb-6">
-                <label className="text-[10px] uppercase tracking-wider text-slate-500 font-bold">Amount</label>
-                <div className="relative">
-                  <input
-                    type="number"
-                    value={bridgeAmount}
-                    onChange={(e) => setBridgeAmount(e.target.value)}
-                    placeholder="0.00"
-                    className="w-full bg-[#0b0f16] border border-white/10 rounded-xl p-4 text-white font-mono text-lg focus:outline-none focus:border-cyan-500/50 transition"
-                  />
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                    <span className="font-bold text-slate-300">{fromToken.symbol}</span>
-                    <div className="w-6 h-6 rounded-full bg-slate-800 flex items-center justify-center">{fromToken.icon}</div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Info */}
-              <div className="bg-white/5 rounded-xl p-4 space-y-2 text-xs text-slate-400 mb-6">
-                <div className="flex justify-between">
-                  <span>{t.bridge.estTime}</span>
-                  <span className="text-white font-mono">~5 mins</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>{t.bridge.fees}</span>
-                  <span className="text-white font-mono">$2.50</span>
-                </div>
-              </div>
-
-              {/* Action */}
-              <button
-                onClick={handleBridge}
-                disabled={!bridgeAmount || bridgeStatus !== "idle"}
-                className="w-full py-4 rounded-xl bg-gradient-to-r from-cyan-600 to-purple-600 text-white font-bold text-lg shadow-lg hover:shadow-cyan-500/20 disabled:opacity-50 transition relative overflow-hidden"
-              >
-                {bridgeStatus === "idle" ? t.bridge.transfer : (
-                  <span className="flex items-center justify-center gap-2">
-                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" /></svg>
-                    {bridgeStatus === "approving" ? t.bridge.approving : t.bridge.bridging}
-                  </span>
-                )}
-              </button>
-
-              {/* Progress Bar */}
-              {bridgeStatus !== "idle" && (
-                <div className="mt-6 space-y-2">
-                  <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
-                    <div className="h-full bg-gradient-to-r from-cyan-400 to-purple-500 transition-all duration-300" style={{ width: `${bridgeStep}%` }} />
-                  </div>
-                  <div className="flex justify-between text-[10px] text-slate-500 uppercase font-bold">
-                    <span className={bridgeStep >= 10 ? "text-cyan-400" : ""}>Approve</span>
-                    <span className={bridgeStep >= 30 ? "text-cyan-400" : ""}>Deposit</span>
-                    <span className={bridgeStep >= 100 ? "text-emerald-400" : ""}>Complete</span>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
+          <BridgeView
+            t={t}
+            sourceChain={sourceChain}
+            destChain={destChain}
+            setSourceChain={setSourceChain}
+            setDestChain={setDestChain}
+            bridgeAmount={bridgeAmount}
+            setBridgeAmount={setBridgeAmount}
+            bridgeStatus={bridgeStatus}
+            bridgeStep={bridgeStep}
+            onBridge={handleBridge}
+            fromToken={fromToken}
+            toToken={toToken}
+            ethBalance={ethBalance}
+          />
         )}
       </main>
 
@@ -3443,6 +3359,246 @@ const LaunchpadView: React.FC<{
     </div>
   );
 };
+
+// BRIDGE VIEW
+const BridgeView: React.FC<{
+  t: typeof TRANSLATIONS[keyof typeof TRANSLATIONS];
+  sourceChain: Chain;
+  destChain: Chain;
+  setSourceChain: (chain: Chain) => void;
+  setDestChain: (chain: Chain) => void;
+  bridgeAmount: string;
+  setBridgeAmount: (amount: string) => void;
+  bridgeStatus: "idle" | "approving" | "bridging" | "completed";
+  bridgeStep: number;
+  onBridge: () => void;
+  fromToken: Token;
+  toToken: Token;
+  ethBalance: string;
+}> = ({
+  t,
+  sourceChain,
+  destChain,
+  setSourceChain,
+  setDestChain,
+  bridgeAmount,
+  setBridgeAmount,
+  bridgeStatus,
+  bridgeStep,
+  onBridge,
+  fromToken,
+  ethBalance,
+}) => {
+    const [isSourceOpen, setIsSourceOpen] = useState(false);
+    const [isDestOpen, setIsDestOpen] = useState(false);
+
+    const estTime = sourceChain.type === "L1" && destChain.type === "L2" ? "~10 min" : "~3 min";
+    const bridgeFee = "0.001 ETH";
+
+    return (
+      <div className="w-full max-w-2xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        {/* Header */}
+        <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-[#050910]/90 backdrop-blur-2xl p-6 md:p-8 shadow-2xl">
+          <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 via-purple-500/10 to-emerald-500/10 opacity-60 pointer-events-none" />
+          <div className="absolute -top-32 -right-32 w-72 h-72 bg-cyan-500/25 blur-[130px] rounded-full opacity-70" />
+
+          <div className="relative z-10">
+            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-black/40 border border-cyan-400/40 text-[11px] text-cyan-300 font-semibold uppercase tracking-[0.22em] mb-4">
+              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+              {t.bridge.title}
+            </div>
+            <h1 className="text-3xl md:text-4xl font-black tracking-tight text-white mb-2">
+              {t.bridge.title}
+            </h1>
+            <p className="text-sm md:text-[13px] text-slate-300 max-w-xl">
+              {t.bridge.subtitle}
+            </p>
+          </div>
+        </div>
+
+        {/* Bridge Interface */}
+        <div className="rounded-2xl border border-white/10 bg-[#050910]/95 backdrop-blur-xl p-6 shadow-2xl">
+          <div className="space-y-4">
+            {/* Source Network */}
+            <div>
+              <label className="block text-xs text-slate-400 mb-2 uppercase tracking-wider">
+                {t.bridge.source}
+              </label>
+              <div className="relative">
+                <button
+                  onClick={() => setIsSourceOpen(!isSourceOpen)}
+                  className="w-full flex items-center justify-between bg-[#050910] border border-white/10 rounded-xl p-4 hover:border-cyan-500/40 transition"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">{sourceChain.logo}</span>
+                    <div className="text-left">
+                      <div className="font-bold text-white">{sourceChain.name}</div>
+                      <div className="text-xs text-slate-500">{sourceChain.type}</div>
+                    </div>
+                  </div>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M6 9l6 6 6-6" />
+                  </svg>
+                </button>
+
+                {isSourceOpen && (
+                  <div className="absolute top-full left-0 right-0 mt-2 bg-[#0d111c] border border-white/10 rounded-xl p-2 shadow-2xl z-50">
+                    {CHAINS.filter(c => c.id !== destChain.id).map((chain) => (
+                      <button
+                        key={chain.id}
+                        onClick={() => {
+                          setSourceChain(chain);
+                          setIsSourceOpen(false);
+                        }}
+                        className="w-full flex items-center gap-3 p-3 hover:bg-white/5 rounded-lg transition"
+                      >
+                        <span className="text-2xl">{chain.logo}</span>
+                        <div className="text-left">
+                          <div className="font-bold text-white">{chain.name}</div>
+                          <div className="text-xs text-slate-500">{chain.type}</div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Swap Button */}
+            <div className="flex justify-center -my-2">
+              <button
+                onClick={() => {
+                  const temp = sourceChain;
+                  setSourceChain(destChain);
+                  setDestChain(temp);
+                }}
+                className="w-10 h-10 rounded-full bg-[#050910] border border-white/10 hover:border-cyan-500/40 transition flex items-center justify-center text-slate-400 hover:text-cyan-300"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M7 10l5-5 5 5" />
+                  <path d="M7 14l5 5 5-5" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Destination Network */}
+            <div>
+              <label className="block text-xs text-slate-400 mb-2 uppercase tracking-wider">
+                {t.bridge.dest}
+              </label>
+              <div className="relative">
+                <button
+                  onClick={() => setIsDestOpen(!isDestOpen)}
+                  className="w-full flex items-center justify-between bg-[#050910] border border-white/10 rounded-xl p-4 hover:border-cyan-500/40 transition"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">{destChain.logo}</span>
+                    <div className="text-left">
+                      <div className="font-bold text-white">{destChain.name}</div>
+                      <div className="text-xs text-slate-500">{destChain.type}</div>
+                    </div>
+                  </div>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M6 9l6 6 6-6" />
+                  </svg>
+                </button>
+
+                {isDestOpen && (
+                  <div className="absolute top-full left-0 right-0 mt-2 bg-[#0d111c] border border-white/10 rounded-xl p-2 shadow-2xl z-50">
+                    {CHAINS.filter(c => c.id !== sourceChain.id).map((chain) => (
+                      <button
+                        key={chain.id}
+                        onClick={() => {
+                          setDestChain(chain);
+                          setIsDestOpen(false);
+                        }}
+                        className="w-full flex items-center gap-3 p-3 hover:bg-white/5 rounded-lg transition"
+                      >
+                        <span className="text-2xl">{chain.logo}</span>
+                        <div className="text-left">
+                          <div className="font-bold text-white">{chain.name}</div>
+                          <div className="text-xs text-slate-500">{chain.type}</div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Amount Input */}
+            <div>
+              <label className="block text-xs text-slate-400 mb-2 uppercase tracking-wider">
+                Amount
+              </label>
+              <div className="bg-[#050910] border border-white/10 rounded-xl p-4">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-8 h-8 rounded-full bg-[#1b1f26] border border-white/5 flex items-center justify-center">
+                    {fromToken.icon}
+                  </div>
+                  <span className="font-bold text-white">{fromToken.symbol}</span>
+                </div>
+                <input
+                  type="text"
+                  value={bridgeAmount}
+                  onChange={(e) => setBridgeAmount(e.target.value)}
+                  placeholder="0.0"
+                  className="w-full bg-transparent text-2xl font-bold text-white outline-none"
+                />
+                <div className="flex justify-between items-center mt-2 text-xs text-slate-500">
+                  <span>Balance: {formatBalance(ethBalance)}</span>
+                  <button
+                    onClick={() => setBridgeAmount(ethBalance)}
+                    className="text-cyan-400 hover:text-cyan-300 font-semibold"
+                  >
+                    MAX
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Bridge Info */}
+            <div className="bg-black/40 border border-white/5 rounded-xl p-4 space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-slate-400">{t.bridge.estTime}</span>
+                <span className="text-white font-mono">{estTime}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-400">{t.bridge.fees}</span>
+                <span className="text-white font-mono">{bridgeFee}</span>
+              </div>
+            </div>
+
+            {/* Bridge Button */}
+            <button
+              onClick={onBridge}
+              disabled={!bridgeAmount || bridgeStatus !== "idle"}
+              className="w-full py-4 rounded-xl bg-gradient-to-r from-cyan-500 to-violet-500 text-white font-bold text-sm uppercase tracking-wider hover:from-cyan-400 hover:to-violet-400 transition shadow-lg shadow-cyan-500/25 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {bridgeStatus === "idle" && t.bridge.transfer}
+              {bridgeStatus === "approving" && t.bridge.approving}
+              {bridgeStatus === "bridging" && t.bridge.bridging}
+              {bridgeStatus === "completed" && t.bridge.completed}
+            </button>
+
+            {/* Progress Bar */}
+            {bridgeStatus !== "idle" && (
+              <div className="mt-6 space-y-2">
+                <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+                  <div className="h-full bg-gradient-to-r from-cyan-400 to-purple-500 transition-all duration-300" style={{ width: `${bridgeStep}%` }} />
+                </div>
+                <div className="flex justify-between text-[10px] text-slate-500 uppercase font-bold">
+                  <span className={bridgeStep >= 10 ? "text-cyan-400" : ""}>Approve</span>
+                  <span className={bridgeStep >= 30 ? "text-cyan-400" : ""}>Deposit</span>
+                  <span className={bridgeStep >= 100 ? "text-emerald-400" : ""}>Complete</span>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
 
 const SwapInput: React.FC<{
   label: string;
