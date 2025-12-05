@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Launchpad Modal Test</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 min-h-screen flex items-center justify-center">
+  <div id="root"></div>
+  
+  <script type="module">
+    import React from 'https://cdn.skypack.dev/react@18';
+    import ReactDOM from 'https://cdn.skypack.dev/react-dom@18/client';
+    
+    const { useState } = React;
+    
+    const TestApp = () => {
+      const [showModal, setShowModal] = useState(false);
+      const [projectData, setProjectData] = useState({
+        name: '',
+        description: '',  
+        launchpadAddress: '',
+        icon: '🚀'
+      });
+      const [isLoading, setIsLoading] = useState(false);
+      
+      const handleAdd = () => {
+        console.log('Adding project:', projectData);
+        setIsLoading(true);
+        setTimeout(() => {
+          alert('Project added: ' + projectData.name);
+          setIsLoading(false);
+          setShowModal(false);
+        }, 1000);
+      };
+      
+      return React.createElement('div', { className: 'text-center' },
+        React.createElement('button', {
+          onClick: () => setShowModal(true),
+          className: 'px-8 py-4 bg-gradient-to-r from-cyan-600 to-purple-600 text-white font-bold rounded-xl text-xl shadow-lg hover:shadow-cyan-500/50 transition-all'
+        }, '🚀 Test Launchpad Modal'),
+        
+        showModal && React.createElement('div', {
+          className: 'fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md',
+          onClick: () => setShowModal(false)
+        },
+          React.createElement('div', {
+            className: 'bg-gray-800 border border-gray-700 rounded-2xl p-6 w-full max-w-md',
+            onClick: e => e.stopPropagation()
+          },
+            React.createElement('h3', { className: 'text-xl font-bold text-white mb-4' }, 'Add Launchpad Project'),
+            React.createElement('div', { className: 'space-y-4' },
+              React.createElement('div', null,
+                React.createElement('label', { className: 'text-sm text-gray-400' }, 'Project Name'),
+                React.createElement('input', {
+                  type: 'text',
+                  value: projectData.name,
+                  onChange: e => setProjectData(prev => ({ ...prev, name: e.target.value })),
+                  className: 'w-full mt-1 px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white',
+                  placeholder: 'X Project'
+                })
+              ),
+              React.createElement('div', null,
+                React.createElement('label', { className: 'text-sm text-gray-400' }, 'Description'),
+                React.createElement('textarea', {
+                  value: projectData.description,
+                  onChange: e => setProjectData(prev => ({ ...prev, description: e.target.value })),
+                  className: 'w-full mt-1 px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white',
+                  rows: 3
+                })
+              ),
+              React.createElement('div', null,
+                React.createElement('label', { className: 'text-sm text-gray-400' }, 'Contract Address'),
+                React.createElement('input', {
+                  type: 'text',
+                  value: projectData.launchpadAddress,
+                  onChange: e => setProjectData(prev => ({ ...prev, launchpadAddress: e.target.value })),
+                  className: 'w-full mt-1 px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white font-mono',
+                  placeholder: '0x...'
+                })
+              )
+            ),
+            React.createElement('div', { className: 'flex gap-3 mt-6' },
+              React.createElement('button', {
+                onClick: () => setShowModal(false),
+                className: 'flex-1 py-3 rounded-xl bg-gray-700 hover:bg-gray-600 text-white font-bold'
+              }, 'Cancel'),
+              React.createElement('button', {
+                onClick: handleAdd,
+                disabled: isLoading,
+                className: 'flex-[2] py-3 rounded-xl bg-gradient-to-r from-cyan-600 to-purple-600 hover:from-cyan-500 hover:to-purple-500 text-white font-bold disabled:opacity-50'
+              }, isLoading ? 'Loading...' : 'Add Project')
+            )
+          )
+        )
+      );
+    };
+    
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(React.createElement(TestApp));
+  </script>
+</body>
+</html>

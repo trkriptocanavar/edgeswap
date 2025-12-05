@@ -1,0 +1,174 @@
+) : activeTab === "limit" ? (
+  <div className="flex flex-col h-full p-6">
+    <div className="space-y-4 mb-6">
+      <div>
+        <label className="block text-xs font-bold text-slate-400 uppercase mb-2">From Amount</label>
+        <input
+          type="number"
+          value={fromAmount}
+          onChange={e => handleFromAmountChange(e.target.value)}
+          placeholder="0.0"
+          className="w-full bg-[#050910] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-cyan-500 outline-none"
+        />
+        <div className="text-xs text-slate-500 mt-1">{fromToken.symbol} Balance: {balancesBySymbol[fromToken.symbol]}</div>
+      </div>
+
+      <div>
+        <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Target Price (USD)</label>
+        <input
+          type="number"
+          value={limitTargetPrice}
+          onChange={e => setLimitTargetPrice(e.target.value)}
+          placeholder="Enter target price"
+          className="w-full bg-[#050910] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-cyan-500 outline-none"
+        />
+        <div className="flex justify-between text-xs mt-2">
+          <span className="text-slate-500">Current: ${prices[toToken.symbol].toFixed(2)}</span>
+          {limitTargetPrice && (
+            <span className={parseFloat(limitTargetPrice) < prices[toToken.symbol] ? "text-emerald-400" : "text-red-400"}>
+              {((parseFloat(limitTargetPrice) - prices[toToken.symbol]) / prices[toToken.symbol] * 100).toFixed(2)}%
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
+
+    <button
+      onClick={createLimitOrder}
+      disabled={!fromAmount || !limitTargetPrice}
+      className="w-full py-4 rounded-xl bg-gradient-to-r from-cyan-600 to-purple-600 hover:from-cyan-500 hover:to-purple-500 text-white font-bold transition-all disabled:opacity-50 disabled:from-slate-800 disabled:to-slate-800 mb-6"
+    >
+      Create Limit Order
+    </button>
+
+    {limitOrders.length > 0 && (
+      <div>
+        <h3 className="text-sm font-bold text-slate-400 uppercase mb-3">Active Orders ({limitOrders.filter(o => o.status === 'pending').length})</h3>
+        <div className="space-y-2">
+          {limitOrders.map(order => (
+            <div key={order.id} className="bg-[#050910] border border-white/10 rounded-xl p-4">
+              <div className="flex justify-between items-start mb-2">
+                <div>
+                  <div className="text-white font-bold">{order.fromAmount} {order.fromToken.symbol} → {order.toToken.symbol}</div>
+                  <div className="text-xs text-slate-500">Target: ${order.targetPrice.toFixed(2)}</div>
+                </div>
+                <span className={`px-2 py-1 rounded text-xs font-bold ${
+                  order.status === 'pending' ? 'bg-yellow-500/10 text-yellow-400' :
+                  order.status === 'executed' ? 'bg-emerald-500/10 text-emerald-400' :
+                  'bg-slate-500/10 text-slate-400'
+                }`}>
+                  {order.status}
+                </span>
+              </div>
+              {order.status === 'pending' && (
+                <button
+                  onClick={() => cancelLimitOrder(order.id)}
+                  className="text-xs text-red-400 hover:text-red-300"
+                >
+                  Cancel Order
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
+  </div>
+) : activeTab === "liquidity" ? (
+  <div className="flex flex-col h-full p-6">
+    <div className="space-y-4 mb-6">
+      <div>
+        <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Amount Per Swap</label>
+        <input
+          type="number"
+          value={dcaAmount}
+          onChange={e => setDcaAmount(e.target.value)}
+          placeholder="Amount"
+          className="w-full bg-[#050910] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-cyan-500 outline-none"
+        />
+        <div className="text-xs text-slate-500 mt-1">{fromToken.symbol} per swap</div>
+      </div>
+
+      <div>
+        <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Frequency</label>
+        <select
+          value={dcaFrequency}
+          onChange={e => setDcaFrequency(e.target.value as any)}
+          className="w-full bg-[#050910] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-cyan-500 outline-none"
+        >
+          <option value="daily">Daily</option>
+          <option value="weekly">Weekly</option>
+          <option value="monthly">Monthly</option>
+        </select>
+      </div>
+
+      <div>
+        <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Total Swaps</label>
+        <input
+          type="number"
+          value={dcaTotalSwaps}
+          onChange={e => setDcaTotalSwaps(e.target.value)}
+          placeholder="Number of swaps"
+          className="w-full bg-[#050910] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-cyan-500 outline-none"
+        />
+      </div>
+
+      {dcaAmount && dcaTotalSwaps && (
+        <div className="p-4 bg-cyan-500/10 border border-cyan-500/20 rounded-xl">
+          <div className="text-xs text-slate-400 mb-1">Total Investment</div>
+          <div className="text-2xl font-bold text-white">
+            {(parseFloat(dcaAmount) * parseInt(dcaTotalSwaps)).toFixed(2)} {fromToken.symbol}
+          </div>
+        </div>
+      )}
+    </div>
+
+    <button
+      onClick={createDCASchedule}
+      disabled={!dcaAmount || !dcaTotalSwaps}
+      className="w-full py-4 rounded-xl bg-gradient-to-r from-cyan-600 to-purple-600 hover:from-cyan-500 hover:to-purple-500 text-white font-bold transition-all disabled:opacity-50 disabled:from-slate-800 disabled:to-slate-800 mb-6"
+    >
+      Create DCA Schedule
+    </button>
+
+    {dcaSchedules.length > 0 && (
+      <div>
+        <h3 className="text-sm font-bold text-slate-400 uppercase mb-3">Active Schedules ({dcaSchedules.filter(s => s.status === 'active').length})</h3>
+        <div className="space-y-2">
+          {dcaSchedules.map(schedule => (
+            <div key={schedule.id} className="bg-[#050910] border border-white/10 rounded-xl p-4">
+              <div className="flex justify-between items-start mb-2">
+                <div>
+                  <div className="text-white font-bold">{schedule.amountPerSwap} {schedule.fromToken.symbol} → {schedule.toToken.symbol}</div>
+                  <div className="text-xs text-slate-500">{schedule.frequency} • {schedule.executedSwaps}/{schedule.totalSwaps} swaps</div>
+                </div>
+                <span className={`px-2 py-1 rounded text-xs font-bold ${
+                  schedule.status === 'active' ? 'bg-emerald-500/10 text-emerald-400' :
+                  schedule.status === 'completed' ? 'bg-cyan-500/10 text-cyan-400' :
+                  'bg-slate-500/10 text-slate-400'
+                }`}>
+                  {schedule.status}
+                </span>
+              </div>
+              <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden mt-2">
+                <div
+                  className="h-full bg-gradient-to-r from-cyan-500 to-purple-500"
+                  style={{ width: `${(schedule.executedSwaps / schedule.totalSwaps) * 100}%` }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
+  </div>
+) : (
+  <div className="h-96 flex flex-col items-center justify-center text-slate-500 text-sm">
+    <div className="w-20 h-20 bg-white/5 rounded-2xl flex items-center justify-center mb-4 text-3xl border border-white/5">
+      🚧
+    </div>
+    <span className="font-bold text-white text-lg">
+      Coming Soon
+    </span>
+  </div>
+)

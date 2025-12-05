@@ -1,13 +1,82 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>edgeswap</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EdgeSwap - Advanced DEX</title>
+  <style>
+    /* Dark Theme - Default and Only */
+    :root {
+      --bg-primary: #020408;
+      --bg-secondary: #050910;
+      --bg-tertiary: #0f131c;
+      --bg-card: rgba(5, 9, 16, 0.9);
+      --bg-hover: rgba(255, 255, 255, 0.05);
+
+      --text-primary: #ffffff;
+      --text-secondary: #e2e8f0;
+      --text-tertiary: #94a3b8;
+      --text-muted: #64748b;
+
+      --border-color: rgba(255, 255, 255, 0.1);
+      --border-hover: rgba(6, 182, 212, 0.3);
+
+      --shadow-sm: rgba(0, 0, 0, 0.5);
+      --shadow-md: rgba(0, 0, 0, 0.7);
+      --shadow-lg: rgba(6, 182, 212, 0.2);
+
+      --gradient-from: rgba(6, 182, 212, 0.2);
+      --gradient-to: rgba(139, 92, 246, 0.2);
+
+      --success: #10b981;
+      --error: #ef4444;
+      --warning: #f59e0b;
+      --info: #06b6d4;
+    }
+
+    /* Cyber Blue Theme (Default) */
+    :root[data-color-theme="cyber"],
+    :root {
+      --accent-primary: #06b6d4;
+      --accent-secondary: #8b5cf6;
+      --accent-tertiary: #10b981;
+      --accent-glow: rgba(6, 182, 212, 0.4);
+      --accent-from: #06b6d4;
+      --accent-to: #8b5cf6;
+
+      /* RGB values for rgba() usage */
+      --accent-primary-rgb: 6, 182, 212;
+      --accent-secondary-rgb: 139, 92, 246;
+      --accent-tertiary-rgb: 16, 185, 129;
+    }
+
+    /* Gold Luxury Theme */
+    :root[data-color-theme="gold"] {
+      --accent-primary: #fbbf24;
+      --accent-secondary: #f59e0b;
+      --accent-tertiary: #eab308;
+      --accent-glow: rgba(251, 191, 36, 0.4);
+      --accent-from: #fbbf24;
+      --accent-to: #f59e0b;
+
+      /* RGB values for rgba() usage */
+      --accent-primary-rgb: 251, 191, 36;
+      --accent-secondary-rgb: 245, 158, 11;
+      --accent-tertiary-rgb: 234, 179, 8;
+    }
+
+    /* Smooth transitions */
+    * {
+      transition: background-color 300ms ease, color 300ms ease, border-color 300ms ease, box-shadow 300ms ease;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+
 </html>

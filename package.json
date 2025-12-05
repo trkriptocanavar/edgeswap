@@ -16,6 +16,7 @@
   "dependencies": {
     "@tanstack/react-query": "^5.90.10",
     "@wagmi/core": "^3.0.0",
+    "lightweight-charts": "^5.0.9",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "viem": "^2.40.0",
