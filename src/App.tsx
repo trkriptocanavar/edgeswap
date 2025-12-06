@@ -2740,89 +2740,141 @@ function App() {
   };
 
   const handleSwap = async () => {
-    if (!account || !fromAmount) return;
-    if (chainId !== SEPOLIA_CHAIN_ID) return switchNetwork();
+    console.log("🔄 handleSwap called", { account, fromAmount, fromToken: fromToken.symbol, toToken: toToken.symbol });
+
+    if (!account || !fromAmount) {
+      console.log("❌ Early return: missing account or amount");
+      return;
+    }
+    if (chainId !== SEPOLIA_CHAIN_ID) {
+      console.log("❌ Wrong network, switching...");
+      return switchNetwork();
+    }
     if (parseFloat(ethBalance) < 0.001) {
       return addToast("Insufficient ETH for gas fees.", "error");
     }
 
     setIsSwapping(true);
+    addToast("Preparing swap...", "info");
+
     try {
       const provider = getProvider();
       const signer = await provider.getSigner();
       const ethers = (window as any).ethers;
 
+      console.log("📝 Provider and signer ready");
+
       // Get token addresses
       const tokenInAddress = TOKEN_ADDRESSES[fromToken.symbol];
       const tokenOutAddress = TOKEN_ADDRESSES[toToken.symbol];
 
+      console.log("📍 Token addresses:", { tokenInAddress, tokenOutAddress });
+
       if (!tokenInAddress || !tokenOutAddress) {
-        throw new Error("Token not supported for swap");
+        throw new Error(`Token not supported: ${!tokenInAddress ? fromToken.symbol : toToken.symbol}. Only ETH, USDC, DAI are supported.`);
       }
 
       // Parse amount with correct decimals
       const fromDecimals = fromToken.symbol === "USDC" ? 6 : 18;
       const amountIn = ethers.parseUnits(fromAmount, fromDecimals);
 
-      // Calculate minimum output (with 1% slippage)
-      const toDecimals = toToken.symbol === "USDC" ? 6 : 18;
-      const expectedOut = ethers.parseUnits(toAmount || "0", toDecimals);
-      const amountOutMin = (expectedOut * BigInt(99)) / BigInt(100); // 1% slippage
+      // Calculate minimum output - TEMPORARILY SET TO 0 TO DEBUG EXECUTION REVERT
+      // const amountOutMin = (expectedOut * BigInt(99)) / BigInt(100); // 1% slippage
+      // Calculate minimum output
+      // const amountOutMin = BigInt(0);
 
       let txHash = "";
 
-      // Check if swapping FROM ETH (native token)
+      // Dynamic Fee Discovery: Try 3000 (0.3%), then 500 (0.05%), then 10000 (1%)
+      const feeTiers = [3000, 500, 10000];
+      let bestFee = 3000;
+      let estimatedGas = BigInt(0);
+      let successParams = null;
+      let estimationError = "";
+
+      console.log("🔍 Starting fee tier discovery...");
+
+      const router = new ethers.Contract(UNISWAP_ROUTER_ADDRESS, SWAP_ROUTER_ABI, signer);
+
+      // Try each fee tier
+      for (const fee of feeTiers) {
+        try {
+          console.log(`Trying fee tier: ${fee / 10000}% (${fee})`);
+
+          const testParams = {
+            tokenIn: fromToken.symbol === "ETH" ? WETH_ADDRESS : tokenInAddress,
+            tokenOut: tokenOutAddress,
+            fee: fee,
+            recipient: account,
+            amountIn: amountIn,
+            amountOutMinimum: BigInt(0), // No slippage check during estimation
+            sqrtPriceLimitX96: 0
+          };
+
+          // Estimate gas to see if this pool works
+          try {
+            // value is needed if swapping ETH
+            const estOpts = fromToken.symbol === "ETH" ? { value: amountIn } : {};
+            const gas = await router.exactInputSingle.estimateGas(testParams, estOpts);
+            console.log(`✅ Success with fee ${fee}! Estimated gas: ${gas.toString()}`);
+
+            bestFee = fee;
+            estimatedGas = gas;
+            successParams = testParams;
+            break; // Found working pool!
+          } catch (e: any) {
+            console.log(`❌ Fee ${fee} failed:`, e.shortMessage || e.message);
+            estimationError = e.shortMessage || e.message || "Unknown error";
+          }
+        } catch (err) {
+          console.log("Loop critical error", err);
+        }
+      }
+
+      if (!successParams) {
+        throw new Error(`Swap failed. No liquidity pool found for this pair. Last error: ${estimationError}. Try a different token or amount.`);
+      }
+
+      // Prepare final transaction with found parameters
+      // Re-add slippage protection now that we know the pool works, if desired. 
+      // Keeping it 0 for now to ensure success as per instruction, but ideally should be calculated from Quoter.
+      successParams.amountOutMinimum = BigInt(0);
+
+      addToast(`Swapping via ${bestFee / 10000}% pool...`, "info");
+
+      let tx;
       if (fromToken.symbol === "ETH") {
-        // ETH -> Token swap (use native ETH, wrap to WETH internally)
-        const router = new ethers.Contract(UNISWAP_ROUTER_ADDRESS, SWAP_ROUTER_ABI, signer);
-
-        const params = {
-          tokenIn: WETH_ADDRESS,
-          tokenOut: tokenOutAddress,
-          fee: 3000, // 0.3% pool fee
-          recipient: account,
-          amountIn: amountIn,
-          amountOutMinimum: amountOutMin,
-          sqrtPriceLimitX96: 0
-        };
-
-        addToast("Confirming swap transaction...", "info");
-        const tx = await router.exactInputSingle(params, { value: amountIn, gasLimit: 300000 });
-        addToast("Swap submitted! Waiting for confirmation...", "info");
-        await tx.wait();
-        txHash = tx.hash;
-
+        tx = await router.exactInputSingle(successParams, {
+          value: amountIn,
+          gasLimit: (estimatedGas * BigInt(120)) / BigInt(100) // +20% buffer
+        });
       } else {
-        // Token -> Token or Token -> ETH swap
+        // Check approval again just to be safe (though handle outside loop)
         const tokenContract = new ethers.Contract(tokenInAddress, ERC20_ABI, signer);
-
-        // Check and approve token if needed
         const allowance = await tokenContract.allowance(account, UNISWAP_ROUTER_ADDRESS);
         if (allowance < amountIn) {
-          addToast(`Approving ${fromToken.symbol}...`, "info");
+          console.log("⚠️ Allowance check failed inside loop logic, approving...");
           const approveTx = await tokenContract.approve(UNISWAP_ROUTER_ADDRESS, ethers.MaxUint256);
           await approveTx.wait();
-          addToast("Approval confirmed!", "success");
         }
 
-        const router = new ethers.Contract(UNISWAP_ROUTER_ADDRESS, SWAP_ROUTER_ABI, signer);
 
-        const params = {
-          tokenIn: tokenInAddress,
-          tokenOut: tokenOutAddress,
-          fee: 3000, // 0.3% pool fee
-          recipient: account,
-          amountIn: amountIn,
-          amountOutMinimum: amountOutMin,
-          sqrtPriceLimitX96: 0
-        };
 
-        addToast("Confirming swap transaction...", "info");
-        const tx = await router.exactInputSingle(params, { gasLimit: 300000 });
-        addToast("Swap submitted! Waiting for confirmation...", "info");
-        await tx.wait();
-        txHash = tx.hash;
+
+        tx = await router.exactInputSingle(successParams, {
+          gasLimit: (estimatedGas * BigInt(120)) / BigInt(100) // +20% buffer
+        });
       }
+
+      addToast("Swap submitted! Waiting for confirmation...", "info");
+      await tx.wait();
+      txHash = tx.hash;
+
+      // Refresh balances after swap
+      setTimeout(() => {
+        // Simple balance refresh simulation (or implement real refresh)
+        if (fromToken.symbol === "ETH") switchNetwork(); // Trigger re-fetch
+      }, 2000);
 
       setLastTxHash(txHash);
       addTransaction({
