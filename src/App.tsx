@@ -2785,6 +2785,26 @@ function App() {
 
       let txHash = "";
 
+      const router = new ethers.Contract(UNISWAP_ROUTER_ADDRESS, SWAP_ROUTER_ABI, signer);
+
+      // CRITICAL START: Check Allowance FIRST before any estimation
+      // If we don't approve first, estimateGas will revert with "transfer from failed"
+      if (fromToken.symbol !== "ETH") {
+        const tokenContract = new ethers.Contract(tokenInAddress, ERC20_ABI, signer);
+        const allowance = await tokenContract.allowance(account, UNISWAP_ROUTER_ADDRESS);
+        console.log(`🔓 Current allowance: ${allowance.toString()}, Required: ${amountIn.toString()}`);
+
+        if (allowance < amountIn) {
+          addToast(`Approving ${fromToken.symbol}...`, "info");
+          console.log("📝 Sending Approve tx...");
+          const approveTx = await tokenContract.approve(UNISWAP_ROUTER_ADDRESS, ethers.MaxUint256);
+          await approveTx.wait();
+          addToast("Approval confirmed!", "success");
+          console.log("✅ Approved");
+        }
+      }
+      // CRITICAL END
+
       // Dynamic Fee Discovery: Try 3000 (0.3%), then 500 (0.05%), then 10000 (1%)
       const feeTiers = [3000, 500, 10000];
       let bestFee = 3000;
@@ -2793,8 +2813,6 @@ function App() {
       let estimationError = "";
 
       console.log("🔍 Starting fee tier discovery...");
-
-      const router = new ethers.Contract(UNISWAP_ROUTER_ADDRESS, SWAP_ROUTER_ABI, signer);
 
       // Try each fee tier
       for (const fee of feeTiers) {
@@ -2849,18 +2867,6 @@ function App() {
           gasLimit: (estimatedGas * BigInt(120)) / BigInt(100) // +20% buffer
         });
       } else {
-        // Check approval again just to be safe (though handle outside loop)
-        const tokenContract = new ethers.Contract(tokenInAddress, ERC20_ABI, signer);
-        const allowance = await tokenContract.allowance(account, UNISWAP_ROUTER_ADDRESS);
-        if (allowance < amountIn) {
-          console.log("⚠️ Allowance check failed inside loop logic, approving...");
-          const approveTx = await tokenContract.approve(UNISWAP_ROUTER_ADDRESS, ethers.MaxUint256);
-          await approveTx.wait();
-        }
-
-
-
-
         tx = await router.exactInputSingle(successParams, {
           gasLimit: (estimatedGas * BigInt(120)) / BigInt(100) // +20% buffer
         });
