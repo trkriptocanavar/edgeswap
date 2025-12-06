@@ -637,12 +637,12 @@ type PoolData = {
 // Fallback Prices if API fails
 
 
-// ADRESLER (Sepolia)
-const USDC_ADDRESS = "0x24D824fd9Bd01c1f694c85f26161d88Cb1fAe50F";
-const DAI_ADDRESS = "0xb1E77a6Ef72A1fB0233B884EE6A8efD98bB080cB";
-const FAUCET_ADDRESS = "0x1198eBcEB99c01cCF103528F67D6Cf83A45F11Db";
-const WETH_ADDRESS = "0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9"; // Sepolia WETH
-const UNISWAP_ROUTER_ADDRESS = "0x3bFA4769FB09eefC5a80d6E87c3B9C650f7Ae48E"; // Sepolia SwapRouter02
+// ADRESLER (Sepolia) - YENİ KONTRATLAR
+const USDC_ADDRESS = "0x6e4a136cF2B9f65F2318eF1bFe6a9f2fd63a6EaD"; // MockUSDC
+const DAI_ADDRESS = "0xe67F36c10624E8C5E4c6CF590fEfFD1d9e9d3053"; // MockDAI
+const EDGESWAP_ADDRESS = "0x51A16Ac3E7e84b0Ba6BCde2b4286C8f525DbD5e0"; // EdgeSwap DEX
+const FAUCET_ADDRESS = "0x1198eBcEB99c01cCF103528F67D6Cf83A45F11Db"; // Eski faucet
+// const WETH_ADDRESS = "0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9"; // Sepolia WETH (artık kullanılmıyor)
 
 // ABIs
 const ERC20_ABI = [
@@ -651,22 +651,29 @@ const ERC20_ABI = [
   "function approve(address spender, uint256 amount) returns (bool)",
   "function decimals() view returns (uint8)",
   "function allowance(address owner, address spender) view returns (uint256)",
+  "function mint(uint256 amount) external", // For MockUSDC/MockDAI
 ];
 const FAUCET_ABI = ["function claim(address token) external"];
 
-// Uniswap V3 SwapRouter02 ABI (simplified)
-const SWAP_ROUTER_ABI = [
-  "function exactInputSingle((address tokenIn, address tokenOut, uint24 fee, address recipient, uint256 amountIn, uint256 amountOutMinimum, uint160 sqrtPriceLimitX96)) external payable returns (uint256 amountOut)",
-  "function exactInput((bytes path, address recipient, uint256 amountIn, uint256 amountOutMinimum)) external payable returns (uint256 amountOut)",
+// EdgeSwap DEX ABI
+const EDGESWAP_ABI = [
+  "function swapETHForUSDC() external payable",
+  "function swapETHForDAI() external payable",
+  "function swapUSDCForETH(uint256 amountIn) external",
+  "function swapDAIForETH(uint256 amountIn) external",
+  "function swapUSDCForDAI(uint256 amountIn) external",
+  "function swapDAIForUSDC(uint256 amountIn) external",
+  "function getQuote(address tokenIn, address tokenOut, uint256 amountIn) external view returns (uint256)",
+  "function getLiquidity() external view returns (uint256 ethBal, uint256 usdcBal, uint256 daiBal)",
 ];
 
-// Token address mapping for Sepolia
-const TOKEN_ADDRESSES: Record<string, string> = {
-  ETH: WETH_ADDRESS,
-  WETH: WETH_ADDRESS,
-  USDC: USDC_ADDRESS,
-  DAI: DAI_ADDRESS,
-};
+// Token address mapping for Sepolia (kept for reference)
+// const TOKEN_ADDRESSES: Record<string, string> = {
+//   ETH: "0x0000000000000000000000000000000000000000", // Native ETH
+//   WETH: WETH_ADDRESS,
+//   USDC: USDC_ADDRESS,
+//   DAI: DAI_ADDRESS,
+// };
 
 const formatBalance = (v?: string) => {
   if (!v) return "0.00";
@@ -2764,123 +2771,66 @@ function App() {
 
       console.log("📝 Provider and signer ready");
 
-      // Get token addresses
-      const tokenInAddress = TOKEN_ADDRESSES[fromToken.symbol];
-      const tokenOutAddress = TOKEN_ADDRESSES[toToken.symbol];
-
-      console.log("📍 Token addresses:", { tokenInAddress, tokenOutAddress });
-
-      if (!tokenInAddress || !tokenOutAddress) {
-        throw new Error(`Token not supported: ${!tokenInAddress ? fromToken.symbol : toToken.symbol}. Only ETH, USDC, DAI are supported.`);
-      }
+      // Create EdgeSwap contract instance
+      const edgeSwap = new ethers.Contract(EDGESWAP_ADDRESS, EDGESWAP_ABI, signer);
 
       // Parse amount with correct decimals
       const fromDecimals = fromToken.symbol === "USDC" ? 6 : 18;
       const amountIn = ethers.parseUnits(fromAmount, fromDecimals);
 
-      // Calculate minimum output - TEMPORARILY SET TO 0 TO DEBUG EXECUTION REVERT
-      // const amountOutMin = (expectedOut * BigInt(99)) / BigInt(100); // 1% slippage
-      // Calculate minimum output
-      // const amountOutMin = BigInt(0);
-
+      let tx;
       let txHash = "";
 
-      const router = new ethers.Contract(UNISWAP_ROUTER_ADDRESS, SWAP_ROUTER_ABI, signer);
+      // Determine which swap function to call
+      const fromSymbol = fromToken.symbol;
+      const toSymbol = toToken.symbol;
 
-      // CRITICAL START: Check Allowance FIRST before any estimation
-      // If we don't approve first, estimateGas will revert with "transfer from failed"
-      if (fromToken.symbol !== "ETH") {
-        const tokenContract = new ethers.Contract(tokenInAddress, ERC20_ABI, signer);
-        const allowance = await tokenContract.allowance(account, UNISWAP_ROUTER_ADDRESS);
-        console.log(`🔓 Current allowance: ${allowance.toString()}, Required: ${amountIn.toString()}`);
+      console.log(`🔀 Swapping ${fromSymbol} -> ${toSymbol}`);
+
+      // If NOT swapping FROM ETH, we need to approve first
+      if (fromSymbol !== "ETH") {
+        const tokenAddress = fromSymbol === "USDC" ? USDC_ADDRESS : DAI_ADDRESS;
+        const tokenContract = new ethers.Contract(tokenAddress, ERC20_ABI, signer);
+
+        const allowance = await tokenContract.allowance(account, EDGESWAP_ADDRESS);
+        console.log(`🔓 Allowance: ${allowance.toString()}, Required: ${amountIn.toString()}`);
 
         if (allowance < amountIn) {
-          addToast(`Approving ${fromToken.symbol}...`, "info");
-          console.log("📝 Sending Approve tx...");
-          const approveTx = await tokenContract.approve(UNISWAP_ROUTER_ADDRESS, ethers.MaxUint256);
+          addToast(`Approving ${fromSymbol}...`, "info");
+          const approveTx = await tokenContract.approve(EDGESWAP_ADDRESS, ethers.MaxUint256);
           await approveTx.wait();
           addToast("Approval confirmed!", "success");
-          console.log("✅ Approved");
-        }
-      }
-      // CRITICAL END
-
-      // Dynamic Fee Discovery: Try 3000 (0.3%), then 500 (0.05%), then 10000 (1%)
-      const feeTiers = [3000, 500, 10000];
-      let bestFee = 3000;
-      let estimatedGas = BigInt(0);
-      let successParams = null;
-      let estimationError = "";
-
-      console.log("🔍 Starting fee tier discovery...");
-
-      // Try each fee tier
-      for (const fee of feeTiers) {
-        try {
-          console.log(`Trying fee tier: ${fee / 10000}% (${fee})`);
-
-          const testParams = {
-            tokenIn: fromToken.symbol === "ETH" ? WETH_ADDRESS : tokenInAddress,
-            tokenOut: tokenOutAddress,
-            fee: fee,
-            recipient: account,
-            amountIn: amountIn,
-            amountOutMinimum: BigInt(0), // No slippage check during estimation
-            sqrtPriceLimitX96: 0
-          };
-
-          // Estimate gas to see if this pool works
-          try {
-            // value is needed if swapping ETH
-            const estOpts = fromToken.symbol === "ETH" ? { value: amountIn } : {};
-            const gas = await router.exactInputSingle.estimateGas(testParams, estOpts);
-            console.log(`✅ Success with fee ${fee}! Estimated gas: ${gas.toString()}`);
-
-            bestFee = fee;
-            estimatedGas = gas;
-            successParams = testParams;
-            break; // Found working pool!
-          } catch (e: any) {
-            console.log(`❌ Fee ${fee} failed:`, e.shortMessage || e.message);
-            estimationError = e.shortMessage || e.message || "Unknown error";
-          }
-        } catch (err) {
-          console.log("Loop critical error", err);
         }
       }
 
-      if (!successParams) {
-        throw new Error(`Swap failed. No liquidity pool found for this pair. Last error: ${estimationError}. Try a different token or amount.`);
-      }
-
-      // Prepare final transaction with found parameters
-      // Re-add slippage protection now that we know the pool works, if desired. 
-      // Keeping it 0 for now to ensure success as per instruction, but ideally should be calculated from Quoter.
-      successParams.amountOutMinimum = BigInt(0);
-
-      addToast(`Swapping via ${bestFee / 10000}% pool...`, "info");
-
-      let tx;
-      if (fromToken.symbol === "ETH") {
-        tx = await router.exactInputSingle(successParams, {
-          value: amountIn,
-          gasLimit: (estimatedGas * BigInt(120)) / BigInt(100) // +20% buffer
-        });
+      // Call the appropriate swap function
+      if (fromSymbol === "ETH" && toSymbol === "USDC") {
+        addToast("Swapping ETH → USDC...", "info");
+        tx = await edgeSwap.swapETHForUSDC({ value: amountIn });
+      } else if (fromSymbol === "ETH" && toSymbol === "DAI") {
+        addToast("Swapping ETH → DAI...", "info");
+        tx = await edgeSwap.swapETHForDAI({ value: amountIn });
+      } else if (fromSymbol === "USDC" && toSymbol === "ETH") {
+        addToast("Swapping USDC → ETH...", "info");
+        tx = await edgeSwap.swapUSDCForETH(amountIn);
+      } else if (fromSymbol === "DAI" && toSymbol === "ETH") {
+        addToast("Swapping DAI → ETH...", "info");
+        tx = await edgeSwap.swapDAIForETH(amountIn);
+      } else if (fromSymbol === "USDC" && toSymbol === "DAI") {
+        addToast("Swapping USDC → DAI...", "info");
+        tx = await edgeSwap.swapUSDCForDAI(amountIn);
+      } else if (fromSymbol === "DAI" && toSymbol === "USDC") {
+        addToast("Swapping DAI → USDC...", "info");
+        tx = await edgeSwap.swapDAIForUSDC(amountIn);
       } else {
-        tx = await router.exactInputSingle(successParams, {
-          gasLimit: (estimatedGas * BigInt(120)) / BigInt(100) // +20% buffer
-        });
+        throw new Error(`Swap pair not supported: ${fromSymbol} -> ${toSymbol}`);
       }
 
-      addToast("Swap submitted! Waiting for confirmation...", "info");
+      addToast("Transaction submitted! Waiting for confirmation...", "info");
       await tx.wait();
       txHash = tx.hash;
 
-      // Refresh balances after swap
-      setTimeout(() => {
-        // Simple balance refresh simulation (or implement real refresh)
-        if (fromToken.symbol === "ETH") switchNetwork(); // Trigger re-fetch
-      }, 2000);
+      console.log("✅ Swap successful! TX:", txHash);
 
       setLastTxHash(txHash);
       addTransaction({
@@ -2896,13 +2846,13 @@ function App() {
       setToAmount("");
 
     } catch (err: any) {
-      console.error(err);
+      console.error("Swap error:", err);
       if (err.code === "ACTION_REJECTED" || err.code === 4001) {
         addToast(t.toast.rejected, "info");
-      } else if (err.message?.includes("insufficient")) {
-        addToast("Insufficient balance for swap.", "error");
-      } else if (err.message?.includes("UNPREDICTABLE_GAS_LIMIT")) {
-        addToast("Pool may not have enough liquidity. Try smaller amount.", "error");
+      } else if (err.message?.includes("insufficient") || err.message?.includes("Low liquidity")) {
+        addToast("Insufficient liquidity in pool.", "error");
+      } else if (err.message?.includes("Low ETH liquidity")) {
+        addToast("Not enough ETH in pool. Try smaller amount.", "error");
       } else {
         addToast("Swap failed: " + (err.reason || err.shortMessage || err.message), "error");
       }
